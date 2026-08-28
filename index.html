@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Runner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f5f5f5;font-family:Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:25px 0 40px}
+h1{font-size:28px;margin-bottom:15px}
+#game{width:900px;max-width:95vw;height:300px;position:relative;overflow:hidden;background:white;border-bottom:4px solid #333;box-shadow:0 4px 15px rgba(0,0,0,.08)}
+#score{position:absolute;top:15px;right:20px;font-size:18px;z-index:5}
+#dino{position:absolute;left:80px;bottom:0;width:75px;height:75px;object-fit:contain;z-index:2;user-select:none}
+.jump{animation:jump .6s ease}
+@keyframes jump{0%{bottom:0}50%{bottom:130px}100%{bottom:0}}
+#cactus{position:absolute;left:900px;bottom:-5px;width:50px;height:65px;font-size:55px;line-height:55px;z-index:2;user-select:none;pointer-events:none}
+#gameOver{display:none;position:absolute;width:100%;top:95px;text-align:center;font-size:30px;font-weight:bold;z-index:10}
+#restart{margin-top:15px;padding:9px 22px;font-size:15px;cursor:pointer;border:1px solid #aaa;background:white;border-radius:7px}
+#restart:hover{background:#eee}
+#xpPanel{width:350px;max-width:90vw;background:white;border-radius:10px;padding:8px 12px;margin-top:15px;box-shadow:0 2px 8px rgba(0,0,0,.10)}
+#xpInfo{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:5px}
+#levelText{font-weight:bold} #xpText{color:#555}
+#xpBar{width:100%;height:8px;background:#ddd;border-radius:10px;overflow:hidden}
+#xpProgress{width:0;height:100%;background:#4caf50;transition:width .2s}
+#characters{width:900px;max-width:95vw;margin-top:15px;background:white;padding:15px;border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,.10)}
+#charactersTitle{font-size:17px;font-weight:bold;margin-bottom:12px}
+#characterGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:8px}
+.character{width:100%;aspect-ratio:1/1;background:#f3f3f3;border:2px solid #ddd;border-radius:8px;cursor:pointer;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;transition:.15s}
+.character:hover{transform:scale(1.05);border-color:#888}
+.character.selected{border:3px solid #4caf50;background:#e8f5e9}
+.character img{width:90%;height:90%;object-fit:contain;pointer-events:none}
+.locked{color:#999;font-size:22px;cursor:not-allowed}
+.locked:hover{transform:none;border-color:#ddd}
+.characterNumber{position:absolute;bottom:2px;right:4px;font-size:9px;color:#777}
+#settingsButton{margin-top:15px;padding:9px 18px;border:none;border-radius:8px;background:#333;color:white;cursor:pointer;font-size:14px}
+#settingsButton:hover{background:#222}
+#settingsModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);justify-content:center;align-items:center;z-index:100}
+#settingsBox{width:350px;max-width:90vw;background:white;border-radius:15px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+#settingsBox h2{margin-bottom:15px}
+.settingsButton{width:100%;padding:11px;margin-top:8px;border:none;border-radius:8px;cursor:pointer;font-size:14px;background:#eee}
+.settingsButton:hover{background:#ddd}
+.danger{background:#ffdddd;color:#a00000}
+.danger:hover{background:#ffcaca}
+#closeSettings{margin-top:15px;width:100%;padding:9px;border:none;border-radius:8px;cursor:pointer;background:#333;color:white}
+#backupFile{display:none}
+
+#attributePanel{width:350px;max-width:90vw;background:white;border-radius:10px;padding:10px 12px;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,.10)}
+#attributeTitle{font-size:14px;font-weight:bold;margin-bottom:8px}
+#attributeRow{display:flex;justify-content:space-between;align-items:center}
+#attributeRow strong{font-size:13px}
+#xpMultiplierText{font-size:12px;color:#4caf50;margin-top:3px}
+#attributeControls{display:flex;align-items:center;gap:8px}
+#attributeControls button{width:30px;height:30px;border:1px solid #ccc;background:#eee;border-radius:7px;font-size:20px;cursor:pointer;line-height:1}
+#attributeControls button:hover{background:#ddd}
+#attributeControls button:disabled{opacity:.4;cursor:not-allowed}
+#attributePoints{min-width:24px;text-align:center;font-weight:bold}
+#availablePointsText{font-size:11px;color:#666;margin-top:7px}
+
+@media(max-width:700px){#characterGrid{grid-template-columns:repeat(5,1fr)}}
+
+.dino-small{width:52px!important;height:52px!important;bottom:0!important}
+#obstacle{position:absolute;left:900px;bottom:-5px;width:55px;height:65px;z-index:2;user-select:none;pointer-events:none;font-size:52px;line-height:55px;display:none}
+
+</style>
+</head>
+<body>
+<h1>🦖 Dino Runner</h1>
+
+<div id="game">
+  <div id="score">Pontos: <span id="points">0</span></div>
+  <img id="dino" src="img/DINO-VERDE.PNG" alt="Dinossauro">
+  <div id="cactus">🌵</div>
+  <div id="obstacle" aria-hidden="true"></div>
+  <div id="gameOver">GAME OVER!<br><button id="restart">Jogar novamente</button></div>
+</div>
+
+<div id="xpPanel">
+  <div id="xpInfo">
+    <span id="levelText">Nível 1</span>
+    <span id="xpText">0 / 500 XP</span>
+  </div>
+  <div id="xpBar"><div id="xpProgress"></div></div>
+</div>
+
+<div id="characters">
+  <div id="charactersTitle">🦖 Escolha seu personagem</div>
+  <div id="characterGrid"></div>
+</div>
+
+
+<div id="attributePanel">
+  <div id="attributeTitle">⭐ Pontos de XP</div>
+  <div id="attributeRow">
+    <div>
+      <strong>XP recebido</strong>
+      <div id="xpMultiplierText">+0% XP</div>
+    </div>
+    <div id="attributeControls">
+      <button id="removePoint">−</button>
+      <span id="attributePoints">0</span>
+      <button id="addPoint">+</button>
+    </div>
+  </div>
+  <div id="availablePointsText">Pontos disponíveis: 0</div>
+</div>
+
+<button id="settingsButton">⚙️ Configurações</button>
+
+
+<div id="settingsModal">
+  <div id="settingsBox">
+    <h2>⚙️ Configurações</h2>
+    <button class="settingsButton" id="saveProgress">💾 Salvar progresso</button>
+    <button class="settingsButton" id="makeBackup">📦 Fazer backup</button>
+    <button class="settingsButton" id="restoreBackup">📥 Restaurar backup</button>
+    <input type="file" id="backupFile" accept=".json">
+    <button class="settingsButton danger" id="resetProgress">🔄 Reiniciar progresso</button>
+    <button id="closeSettings">Fechar</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
